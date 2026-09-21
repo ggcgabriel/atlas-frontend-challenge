@@ -1,0 +1,7 @@
+# pnpm >= 10 blocks dependency install/postinstall scripts by default.
+# These need theirs: each downloads or compiles a native binary at install time.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

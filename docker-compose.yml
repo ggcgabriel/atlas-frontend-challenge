@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: atlas-catalog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas_catalog}
+    ports:
+      # Host 5433 by default so this never fights a Postgres already on 5432.
+      - '${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - atlas_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # `pnpm db:migrate` right after `up -d` fails without this — Postgres
+      # accepts TCP connections a moment before it will accept queries.
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-atlas} -d ${POSTGRES_DB:-atlas_catalog}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  atlas_pgdata:
