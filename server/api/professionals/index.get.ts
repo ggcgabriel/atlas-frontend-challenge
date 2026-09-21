@@ -24,7 +24,10 @@ export default defineEventHandler(
           )
         : undefined,
       query.profession ? eq(professions.slug, query.profession) : undefined,
+      query.category ? eq(professions.category, query.category) : undefined,
       query.city ? eq(professionals.city, query.city) : undefined,
+      query.urgentOnly ? eq(professionals.acceptsUrgent, true) : undefined,
+      query.verifiedOnly ? eq(professionals.isVerified, true) : undefined,
       query.minPrice !== undefined
         ? gte(professionals.hourlyRateCents, query.minPrice)
         : undefined,
@@ -67,13 +70,18 @@ export default defineEventHandler(
           slug: professionals.slug,
           name: professionals.name,
           avatarUrl: professionals.avatarUrl,
+          avatarLqip: professionals.avatarLqip,
           profession: professions.name,
           professionSlug: professions.slug,
+          professionCategory: professions.category,
           hourlyRateCents: professionals.hourlyRateCents,
           rating: professionals.rating,
           reviewsCount: professionals.reviewsCount,
           city: professionals.city,
           state: professionals.state,
+          experienceYears: professionals.experienceYears,
+          acceptsUrgent: professionals.acceptsUrgent,
+          isVerified: professionals.isVerified,
           isAvailable: professionals.isAvailable,
         })
         .from(professionals)

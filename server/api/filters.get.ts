@@ -46,6 +46,9 @@ export default defineEventHandler(async (event): Promise<CatalogFilters> => {
 
   return {
     professions: professionRows,
+    // Derived from the professions we just returned — one fewer round trip, and
+    // the two can never disagree.
+    categories: [...new Set(professionRows.map((p) => p.category))].sort(),
     cities: cityRows.map((row) => row.city),
     priceRange: {
       minCents: range?.minCents ?? 0,

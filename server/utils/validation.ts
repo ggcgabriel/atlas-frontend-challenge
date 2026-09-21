@@ -5,10 +5,14 @@ import { PROFESSIONAL_SORTS } from '#shared/types/professional'
 export const professionalQuerySchema = z.object({
   q: z.string().trim().min(1).max(80).optional(),
   profession: z.string().trim().max(80).optional(),
+  category: z.string().trim().max(80).optional(),
   city: z.string().trim().max(120).optional(),
   minPrice: z.coerce.number().int().min(0).optional(),
   maxPrice: z.coerce.number().int().min(0).optional(),
   minRating: z.coerce.number().min(0).max(5).optional(),
+  // `?urgentOnly` with no value, `=true` and `=1` all mean true.
+  urgentOnly: z.coerce.boolean().optional(),
+  verifiedOnly: z.coerce.boolean().optional(),
   sort: z.enum(PROFESSIONAL_SORTS).default('relevance'),
   page: z.coerce.number().int().min(1).default(1),
   // Capped: without a ceiling, `?limit=100000` is a free denial of service.

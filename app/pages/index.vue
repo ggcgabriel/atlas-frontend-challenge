@@ -1,59 +1,100 @@
 <script setup lang="ts">
-import { mdiViewGridOutline, mdiViewListOutline } from '@mdi/js'
+import { mdiCheckDecagram, mdiFlash, mdiStar } from '@mdi/js'
 
-// Stage 1 smoke test: proves Vuetify SSR + theme, Pinia and the shared
-// `shared/types` contract all resolve. Replaced by the real catalog in Stage 3.
-const ui = useUiStore()
+// Stage 2 smoke test: proves SSR + Nitro + Postgres + the image pipeline all
+// line up. The real catalog (grid, filters, infinite scroll) lands in Stage 3.
+const { data, error } = await useFetch('/api/professionals', {
+  query: { limit: 6, sort: 'rating_desc' },
+})
 
-const placeholder: ProfessionalListItem = {
-  id: 0,
-  slug: 'exemplo',
-  name: 'Catálogo em construção',
-  avatarUrl: '',
-  profession: 'Aguardando a Etapa 2',
-  professionSlug: 'placeholder',
-  hourlyRateCents: 0,
-  rating: 0,
-  reviewsCount: 0,
-  city: 'São Paulo',
-  state: 'SP',
-  isAvailable: false,
-}
+const brl = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+})
+const formatRate = (cents: number) => `${brl.format(cents / 100)}/h`
 
 useSeoMeta({
-  title: 'Atlas Pro — catálogo de profissionais',
+  title: 'Atlas Pro — profissionais de reforma e manutenção',
   description:
-    'Encontre profissionais autônomos por especialidade, preço e avaliação.',
+    'Encontre eletricistas, encanadores, pintores e marceneiros por preço, avaliação e região.',
 })
 </script>
 
 <template>
   <v-container class="py-8">
-    <h1 class="text-h4 font-weight-bold mb-2">Catálogo de profissionais</h1>
+    <h1 class="text-h4 font-weight-bold mb-2">Profissionais de reforma</h1>
     <p class="text-body-1 text-medium-emphasis mb-6">
-      Etapa 1 concluída: Nuxt, Vuetify e Pinia rodando com SSR.
+      Etapa 2 concluída: {{ data?.total ?? 0 }} profissionais servidos pelo
+      Postgres via Nitro.
     </p>
 
-    <v-btn-toggle
-      :model-value="ui.viewMode"
-      mandatory
-      density="comfortable"
-      variant="outlined"
-      class="mb-6"
-      @update:model-value="ui.setViewMode($event)"
-    >
-      <v-btn value="grid" :prepend-icon="mdiViewGridOutline">Grade</v-btn>
-      <v-btn value="list" :prepend-icon="mdiViewListOutline">Lista</v-btn>
-    </v-btn-toggle>
+    <v-alert v-if="error" type="error" variant="tonal" class="mb-6">
+      Falha ao carregar: {{ error.message }}
+    </v-alert>
 
-    <v-card max-width="420" border flat>
-      <v-card-item>
-        <v-card-title>{{ placeholder.name }}</v-card-title>
-        <v-card-subtitle>{{ placeholder.profession }}</v-card-subtitle>
-      </v-card-item>
-      <v-card-text class="text-medium-emphasis">
-        Modo de visualização atual: <strong>{{ ui.viewMode }}</strong>
-      </v-card-text>
-    </v-card>
+    <v-row>
+      <v-col
+        v-for="pro in data?.items ?? []"
+        :key="pro.id"
+        cols="12"
+        sm="6"
+        md="4"
+      >
+        <v-card border flat class="h-100">
+          <div class="d-flex pa-4 ga-4">
+            <!-- width/height are fixed and known, so the box never reflows -->
+            <NuxtImg
+              :src="pro.avatarUrl"
+              :alt="`Foto de ${pro.name}`"
+              width="72"
+              height="72"
+              sizes="72px"
+              loading="lazy"
+              class="rounded-lg flex-shrink-0"
+              :style="{
+                backgroundImage: `url(${pro.avatarLqip})`,
+                backgroundSize: 'cover',
+              }"
+            />
+            <div class="min-w-0">
+              <div class="d-flex align-center ga-1">
+                <span class="text-subtitle-1 font-weight-bold text-truncate">
+                  {{ pro.name }}
+                </span>
+                <v-icon
+                  v-if="pro.isVerified"
+                  :icon="mdiCheckDecagram"
+                  size="16"
+                  color="primary"
+                  :aria-label="`${pro.name} é verificado`"
+                />
+              </div>
+              <div class="text-body-2 text-medium-emphasis">
+                {{ pro.profession }} · {{ pro.city }}/{{ pro.state }}
+              </div>
+              <div class="d-flex align-center ga-1 mt-1">
+                <v-icon :icon="mdiStar" size="14" color="warning" />
+                <span class="text-body-2">
+                  {{ pro.rating.toFixed(1) }}
+                  <span class="text-medium-emphasis">
+                    ({{ pro.reviewsCount }})
+                  </span>
+                </span>
+                <v-icon
+                  v-if="pro.acceptsUrgent"
+                  :icon="mdiFlash"
+                  size="14"
+                  color="warning"
+                  aria-label="Atende urgência"
+                />
+              </div>
+              <div class="text-subtitle-2 font-weight-bold mt-2">
+                {{ formatRate(pro.hourlyRateCents) }}
+              </div>
+            </div>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>

@@ -15,6 +15,13 @@
       "when": 1790014931192,
       "tag": "0001_pg_trgm_search",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790021884232,
+      "tag": "0002_hesitant_leader",
+      "breakpoints": true
     }
   ]
 }

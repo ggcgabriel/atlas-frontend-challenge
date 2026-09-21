@@ -1,6 +1,7 @@
 import { asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import {
+  portfolioImages,
   professionals,
   professions,
   reviews,
@@ -24,17 +25,23 @@ export default defineEventHandler(async (event): Promise<ProfessionalDetail> => 
       slug: professionals.slug,
       name: professionals.name,
       avatarUrl: professionals.avatarUrl,
+      avatarLqip: professionals.avatarLqip,
       profession: professions.name,
       professionSlug: professions.slug,
+      professionCategory: professions.category,
       hourlyRateCents: professionals.hourlyRateCents,
       rating: professionals.rating,
       reviewsCount: professionals.reviewsCount,
       city: professionals.city,
       state: professionals.state,
+      experienceYears: professionals.experienceYears,
+      acceptsUrgent: professionals.acceptsUrgent,
+      isVerified: professionals.isVerified,
       isAvailable: professionals.isAvailable,
       bio: professionals.bio,
       lat: professionals.lat,
       lng: professionals.lng,
+      serviceRadiusKm: professionals.serviceRadiusKm,
       createdAt: professionals.createdAt,
     })
     .from(professionals)
@@ -49,8 +56,8 @@ export default defineEventHandler(async (event): Promise<ProfessionalDetail> => 
     })
   }
 
-  // Two small indexed lookups in parallel rather than one row-multiplying join.
-  const [professionalServices, professionalReviews] = await Promise.all([
+  // Small indexed lookups in parallel rather than one row-multiplying join.
+  const [professionalServices, professionalReviews, portfolio] = await Promise.all([
     db
       .select({
         id: services.id,
@@ -72,6 +79,18 @@ export default defineEventHandler(async (event): Promise<ProfessionalDetail> => 
       .from(reviews)
       .where(eq(reviews.professionalId, professional.id))
       .orderBy(desc(reviews.createdAt)),
+    db
+      .select({
+        id: portfolioImages.id,
+        url: portfolioImages.url,
+        alt: portfolioImages.alt,
+        width: portfolioImages.width,
+        height: portfolioImages.height,
+        lqip: portfolioImages.lqip,
+      })
+      .from(portfolioImages)
+      .where(eq(portfolioImages.professionalId, professional.id))
+      .orderBy(asc(portfolioImages.position)),
   ])
 
   return {
@@ -83,5 +102,6 @@ export default defineEventHandler(async (event): Promise<ProfessionalDetail> => 
       ...review,
       createdAt: review.createdAt.toISOString(),
     })),
+    portfolio,
   }
 })

@@ -25,20 +25,38 @@ export interface Profession {
   category: string
 }
 
+/** Every avatar is produced by the image pipeline at this exact size. */
+export const AVATAR_SIZE = 400
+
 /** The shape a catalog card needs — deliberately narrower than the detail. */
 export interface ProfessionalListItem {
   id: number
   slug: string
   name: string
   avatarUrl: string
+  /** Inline 16px WebP data URI, shown until the real avatar decodes. */
+  avatarLqip: string
   profession: string
   professionSlug: string
+  professionCategory: string
   hourlyRateCents: number
   rating: number
   reviewsCount: number
   city: string
   state: string
+  experienceYears: number
+  acceptsUrgent: boolean
+  isVerified: boolean
   isAvailable: boolean
+}
+
+export interface PortfolioImage {
+  id: number
+  url: string
+  alt: string
+  width: number
+  height: number
+  lqip: string
 }
 
 export interface ProfessionalService {
@@ -60,18 +78,24 @@ export interface ProfessionalDetail extends ProfessionalListItem {
   bio: string
   lat: number
   lng: number
+  serviceRadiusKm: number
   createdAt: string
   services: ProfessionalService[]
   reviews: ProfessionalReview[]
+  /** Empty until Stage 6 — the table exists, the photo source does not yet. */
+  portfolio: PortfolioImage[]
 }
 
 export interface ProfessionalQuery {
   q?: string
   profession?: string
+  category?: string
   city?: string
   minPrice?: number
   maxPrice?: number
   minRating?: number
+  urgentOnly?: boolean
+  verifiedOnly?: boolean
   sort?: ProfessionalSort
   page?: number
   limit?: number
@@ -89,6 +113,8 @@ export type ProfessionalListResponse = Paginated<ProfessionalListItem>
 
 export interface CatalogFilters {
   professions: Profession[]
+  /** Distinct `profession.category` values, for the top-level filter chips. */
+  categories: string[]
   cities: string[]
   priceRange: { minCents: number; maxCents: number }
 }
