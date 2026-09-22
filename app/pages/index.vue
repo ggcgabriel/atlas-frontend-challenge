@@ -25,6 +25,55 @@ const {
   loadMore,
 } = useProfessionalCatalog(query)
 
+/**
+ * Infinite scroll, with a budget.
+ *
+ * Auto-loading stops after `MAX_AUTO_LOADS` consecutive pages and hands back to
+ * the button. Two reasons, both real: an unbounded scroll makes the footer
+ * unreachable (its links recede every time you approach them), and 520 cards in
+ * the DOM is a cost nobody asked for. Pressing the button is an explicit "keep
+ * going", so it refills the budget.
+ */
+const MAX_AUTO_LOADS = 4
+const autoLoads = ref(0)
+
+/**
+ * Pausing on `loadMoreError` is what stops a failed request becoming a hot
+ * loop: the sentinel stays on screen after a failure, so without this it would
+ * retry against a failing endpoint as fast as the network allows.
+ */
+const autoLoadPaused = computed(
+  () =>
+    isLoadingMore.value ||
+    Boolean(loadMoreError.value) ||
+    autoLoads.value >= MAX_AUTO_LOADS,
+)
+
+async function loadMoreAuto() {
+  // The observer can fire more than once before `disabled` reaches the DOM.
+  // `loadMore()` already ignores re-entrant calls, but without this guard the
+  // budget would still be charged for a page that never loaded.
+  if (autoLoadPaused.value || !hasMore.value) return
+  autoLoads.value += 1
+  await loadMore()
+}
+
+async function loadMoreManual() {
+  autoLoads.value = 0
+  await loadMore()
+}
+
+// A new query is a new result set; the previous budget has nothing to do with it.
+watch(query, () => {
+  autoLoads.value = 0
+})
+
+const liveCount = computed(() =>
+  isLoading.value
+    ? ''
+    : `Mostrando ${formatCount(items.value.length)} de ${formatCount(total.value)} profissionais.`,
+)
+
 const category = computed({
   get: () => query.value.category ?? null,
   // Picking a category clears a profession filter — the narrower one would
@@ -97,7 +146,22 @@ useSeoMeta({
           @clear="clearAll"
         />
 
+        <!--
+          Announces the new count after each page. `role="status"` stays quiet
+          on first render and only speaks on change, which is exactly the
+          "24 more results arrived" signal a scroll-driven list otherwise hides
+          from anyone not watching the screen.
+        -->
+        <p class="visually-hidden" role="status" aria-live="polite">
+          {{ liveCount }}
+        </p>
+
         <div v-if="hasMore" class="page__more">
+          <InfiniteScrollSentinel
+            :disabled="autoLoadPaused"
+            @load="loadMoreAuto"
+          />
+
           <p class="text-body-2 text-medium-emphasis mb-3">
             {{ formatCount(items.length) }} de {{ formatCount(total) }}
           </p>
@@ -112,15 +176,21 @@ useSeoMeta({
             {{ loadMoreError }}
           </v-alert>
 
+          <!--
+            Kept, and not merely as a fallback for browsers without an observer:
+            it is the only way to continue for keyboard and screen-reader users,
+            the retry after a failed page, and the control that resumes
+            auto-loading once the budget below runs out.
+          -->
           <v-btn
             variant="outlined"
             size="large"
             rounded="pill"
             class="text-none px-8"
             :loading="isLoadingMore"
-            @click="loadMore"
+            @click="loadMoreManual"
           >
-            Carregar mais profissionais
+            {{ loadMoreError ? 'Tentar novamente' : 'Carregar mais profissionais' }}
           </v-btn>
         </div>
       </div>
