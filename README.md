@@ -3,7 +3,7 @@
 Catálogo de profissionais de reforma e manutenção residencial, feito para o
 desafio técnico de front-end da Atlas Technologies ([`docs/challenge.md`](docs/challenge.md)).
 
-**Demo:** https://atlas-frontend-challenge.vercel.app
+**Demo:** https://atlas-frontend-challenge-8bce3lon6-ggcgabriels-projects.vercel.app/
 
 Nuxt 4 (SSR), Vue 3, TypeScript, Vuetify 4, Pinia, Drizzle + PostgreSQL 17, Vitest.
 
