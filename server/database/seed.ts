@@ -51,6 +51,14 @@ function fill(template: string, values: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ''))
 }
 
+/** A per-criterion score within one point of the review's overall rating. */
+function nearRating(rating: number): number {
+  return Math.min(
+    5,
+    Math.max(1, rating + faker.number.int({ min: -1, max: 1 })),
+  )
+}
+
 async function main() {
   const url = process.env.DATABASE_URL
   if (!url) {
@@ -82,6 +90,7 @@ async function main() {
     .values(
       PROFESSIONS.map((p) => ({
         name: p.name,
+        namePlural: p.namePlural,
         slug: p.slug,
         category: p.category,
       })),
@@ -100,68 +109,97 @@ async function main() {
 
   console.log(`Inserting ${PROFESSIONAL_COUNT} professionals…`)
   const usedSlugs = new Set<string>()
-  const professionalRows = Array.from({ length: PROFESSIONAL_COUNT }, (_, i) => {
-    const professionRow = faker.helpers.arrayElement(insertedProfessions)
-    const profession = professionSeedById.get(professionRow.id)!
-    const location = faker.helpers.arrayElement(cityPool)
-    // firstName + lastName rather than fullName(): the pt_BR locale sprinkles
-    // "Sr." / "Sra." prefixes into fullName, which no one puts on a profile.
-    const name = `${faker.person.firstName()} ${faker.person.lastName()}`
+  const professionalRows = Array.from(
+    { length: PROFESSIONAL_COUNT },
+    (_, i) => {
+      const professionRow = faker.helpers.arrayElement(insertedProfessions)
+      const profession = professionSeedById.get(professionRow.id)!
+      const location = faker.helpers.arrayElement(cityPool)
+      // firstName + lastName rather than fullName(): the pt_BR locale sprinkles
+      // "Sr." / "Sra." prefixes into fullName, which no one puts on a profile.
+      const name = `${faker.person.firstName()} ${faker.person.lastName()}`
 
-    // Slugs must be unique and faker repeats names across 520 draws.
-    let slug = `${slugify(name)}-${profession.slug}`
-    let suffix = 2
-    while (usedSlugs.has(slug)) slug = `${slug}-${suffix++}`
-    usedSlugs.add(slug)
+      // Slugs must be unique and faker repeats names across 520 draws.
+      let slug = `${slugify(name)}-${profession.slug}`
+      let suffix = 2
+      while (usedSlugs.has(slug)) slug = `${slug}-${suffix++}`
+      usedSlugs.add(slug)
 
-    const experienceYears = faker.number.int({ min: 1, max: 30 })
-    const serviceRadiusKm = faker.helpers.arrayElement([5, 10, 15, 20, 30, 50])
-    const [s1, s2] = faker.helpers.shuffle([...profession.specialties])
+      const experienceYears = faker.number.int({ min: 1, max: 30 })
+      const serviceRadiusKm = faker.helpers.arrayElement([
+        5, 10, 15, 20, 30, 50,
+      ])
+      const shuffledSpecialties = faker.helpers.shuffle([
+        ...profession.specialties,
+      ])
+      const [s1, s2] = shuffledSpecialties
+      const specialties = shuffledSpecialties.slice(
+        0,
+        faker.number.int({ min: 2, max: 3 }),
+      )
+      // Advertised in the bio too, so the profile's chip and its prose agree.
+      const warrantyMonths = faker.helpers.arrayElement([0, 3, 6, 12])
 
-    // One portrait per professional — no face is ever reused in the catalog.
-    const portrait = manifest.portraits[i]!
+      // One portrait per professional — no face is ever reused in the catalog.
+      const portrait = manifest.portraits[i]!
+      // Every 20th professional is seeded without a photo (26 of 520). The
+      // catalog is mocked, so the initials fallback would otherwise never render;
+      // this keeps that path exercised in real data instead of only on an <img>
+      // error nobody triggers.
+      const hasPhoto = (i + 1) % 20 !== 0
 
-    const bio = [
-      fill(faker.helpers.arrayElement(BIO_OPENINGS), {
-        category: profession.category.toLowerCase(),
-        years: experienceYears,
-      }),
-      fill(faker.helpers.arrayElement(BIO_FOCUS), { s1: s1!, s2: s2! }),
-      fill(faker.helpers.arrayElement(BIO_SERVICE), {
+      const bio = [
+        fill(faker.helpers.arrayElement(BIO_OPENINGS), {
+          category: profession.category.toLowerCase(),
+          years: experienceYears,
+        }),
+        fill(faker.helpers.arrayElement(BIO_FOCUS), { s1: s1!, s2: s2! }),
+        fill(faker.helpers.arrayElement(BIO_SERVICE), {
+          city: location.city,
+          radius: serviceRadiusKm,
+        }),
+        fill(faker.helpers.arrayElement(BIO_CLOSING), {
+          warranty: warrantyMonths || 3,
+        }),
+      ].join(' ')
+
+      return {
+        slug,
+        name,
+        avatarUrl: hasPhoto ? portrait.url : '',
+        avatarLqip: hasPhoto ? portrait.lqip : '',
+        professionId: professionRow.id,
+        // Rate is drawn inside the profession's own realistic band, so sorting by
+        // price tells you something true about the trade instead of being noise.
+        hourlyRateCents: faker.number.int({
+          min: profession.rateCents[0],
+          max: profession.rateCents[1],
+        }),
         city: location.city,
-        radius: serviceRadiusKm,
-      }),
-      fill(faker.helpers.arrayElement(BIO_CLOSING), {
-        warranty: faker.helpers.arrayElement([3, 6, 12]),
-      }),
-    ].join(' ')
-
-    return {
-      slug,
-      name,
-      avatarUrl: portrait.url,
-      avatarLqip: portrait.lqip,
-      professionId: professionRow.id,
-      // Rate is drawn inside the profession's own realistic band, so sorting by
-      // price tells you something true about the trade instead of being noise.
-      hourlyRateCents: faker.number.int({
-        min: profession.rateCents[0],
-        max: profession.rateCents[1],
-      }),
-      city: location.city,
-      state: location.state,
-      // Jitter around the city centre so professionals aren't stacked on a point.
-      lat: location.lat + faker.number.float({ min: -0.12, max: 0.12 }),
-      lng: location.lng + faker.number.float({ min: -0.12, max: 0.12 }),
-      bio,
-      experienceYears,
-      serviceRadiusKm,
-      acceptsUrgent: faker.datatype.boolean({ probability: 0.35 }),
-      isVerified: faker.datatype.boolean({ probability: 0.4 }),
-      isAvailable: faker.datatype.boolean({ probability: 0.75 }),
-      createdAt: faker.date.past({ years: 3 }),
-    }
-  })
+        state: location.state,
+        // Jitter around the city centre so professionals aren't stacked on a point.
+        lat: location.lat + faker.number.float({ min: -0.12, max: 0.12 }),
+        lng: location.lng + faker.number.float({ min: -0.12, max: 0.12 }),
+        bio,
+        experienceYears,
+        serviceRadiusKm,
+        specialties,
+        warrantyMonths,
+        acceptsUrgent: faker.datatype.boolean({ probability: 0.35 }),
+        isVerified: faker.datatype.boolean({ probability: 0.4 }),
+        freeQuote: faker.datatype.boolean({ probability: 0.6 }),
+        responseTimeHours: faker.helpers.weightedArrayElement([
+          { weight: 20, value: 1 },
+          { weight: 35, value: 2 },
+          { weight: 25, value: 4 },
+          { weight: 15, value: 12 },
+          { weight: 5, value: 24 },
+        ]),
+        isAvailable: faker.datatype.boolean({ probability: 0.75 }),
+        createdAt: faker.date.past({ years: 3 }),
+      }
+    },
+  )
 
   const insertedProfessionals = await db
     .insert(professionals)
@@ -182,7 +220,10 @@ async function main() {
 
     const offered = faker.helpers.arrayElements(
       profession.services,
-      faker.number.int({ min: 2, max: Math.min(5, profession.services.length) }),
+      faker.number.int({
+        min: 2,
+        max: Math.min(5, profession.services.length),
+      }),
     )
     for (const service of offered) {
       serviceRows.push({
@@ -217,6 +258,13 @@ async function main() {
         professionalId: professional.id,
         authorName: faker.person.firstName(),
         rating,
+        // The criteria vary around the score the reviewer actually gave, never
+        // independently of it: nobody rates a job 2 stars overall and 5 on
+        // every criterion. The profile averages these into its four bars.
+        ratingPunctuality: nearRating(rating),
+        ratingFinish: nearRating(rating),
+        ratingCleanliness: nearRating(rating),
+        ratingValue: nearRating(rating),
         // Comment matches the score. Drawing at random would let a one-star
         // review read "Serviço impecável".
         comment: faker.helpers.arrayElement(REVIEWS_BY_RATING[rating]!),

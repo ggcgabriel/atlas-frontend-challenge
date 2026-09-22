@@ -10,12 +10,16 @@ import {
   timestamp,
   varchar,
 } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 
 export const professions = pgTable('professions', {
   id: serial('id').primaryKey(),
   slug: varchar('slug', { length: 80 }).notNull().unique(),
   name: varchar('name', { length: 120 }).notNull(),
+  // Stored rather than derived: pt-BR plurals are irregular enough
+  // (Pintor -> Pintores, Técnico em -> Técnicos em) that a rule would be wrong
+  // more often than right, and the listing headline reads this on every request.
+  namePlural: varchar('name_plural', { length: 140 }).notNull().default(''),
   category: varchar('category', { length: 80 }).notNull(),
 })
 
@@ -40,7 +44,9 @@ export const professionals = pgTable(
     hourlyRateCents: integer('hourly_rate_cents').notNull(),
     // Denormalized from `reviews` at seed time so the listing can sort by
     // rating without joining or aggregating on every request.
-    rating: numeric('rating', { precision: 2, scale: 1 }).notNull().default('0'),
+    rating: numeric('rating', { precision: 2, scale: 1 })
+      .notNull()
+      .default('0'),
     reviewsCount: integer('reviews_count').notNull().default(0),
     city: varchar('city', { length: 120 }).notNull(),
     state: varchar('state', { length: 2 }).notNull(),
@@ -50,8 +56,20 @@ export const professionals = pgTable(
     experienceYears: integer('experience_years').notNull().default(1),
     /** How far the professional will travel — they come to the customer. */
     serviceRadiusKm: integer('service_radius_km').notNull().default(10),
+    // 2-3 of the profession's specialties, drawn per professional so two
+    // pedreiros do not advertise an identical set of chips.
+    specialties: text('specialties')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     acceptsUrgent: boolean('accepts_urgent').notNull().default(false),
     isVerified: boolean('is_verified').notNull().default(false),
+    /** Quotes at no charge — a seal on the card and a filter in the sidebar. */
+    freeQuote: boolean('free_quote').notNull().default(false),
+    /** Typical first reply, in hours. Drives "Responde em cerca de N horas". */
+    responseTimeHours: integer('response_time_hours').notNull().default(24),
+    /** Warranty offered on finished work, in months. 0 means none advertised. */
+    warrantyMonths: integer('warranty_months').notNull().default(0),
     isAvailable: boolean('is_available').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -111,6 +129,13 @@ export const reviews = pgTable(
       .references(() => professionals.id, { onDelete: 'cascade' }),
     authorName: varchar('author_name', { length: 140 }).notNull(),
     rating: integer('rating').notNull(),
+    // The four criteria the profile breaks the score down by. Stored per review
+    // so the bars on the profile are a real avg() over rows, not a decoration
+    // derived from the overall rating at render time.
+    ratingPunctuality: integer('rating_punctuality').notNull().default(5),
+    ratingFinish: integer('rating_finish').notNull().default(5),
+    ratingCleanliness: integer('rating_cleanliness').notNull().default(5),
+    ratingValue: integer('rating_value').notNull().default(5),
     comment: text('comment').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -136,12 +161,15 @@ export const professionalsRelations = relations(
   }),
 )
 
-export const portfolioImagesRelations = relations(portfolioImages, ({ one }) => ({
-  professional: one(professionals, {
-    fields: [portfolioImages.professionalId],
-    references: [professionals.id],
+export const portfolioImagesRelations = relations(
+  portfolioImages,
+  ({ one }) => ({
+    professional: one(professionals, {
+      fields: [portfolioImages.professionalId],
+      references: [professionals.id],
+    }),
   }),
-}))
+)
 
 export const servicesRelations = relations(services, ({ one }) => ({
   professional: one(professionals, {
