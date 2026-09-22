@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { mdiMagnify } from '@mdi/js'
 
-/**
- * The header's search pill: a labelled summary of the current search that opens
- * the real form in a dialog.
- *
- * It is a <button> rather than a styled <div> so it is one tab stop with a
- * native activation, and the dialog it opens is where the actual inputs live —
- * two always-visible inputs in a 64px header cost more room than they earn on
- * a phone, which is the breakpoint the mock is drawn at.
- */
 const { query } = useCatalogQuery()
 const { data: filters } = useCatalogFilters()
 
@@ -42,19 +33,12 @@ const whereLabel = computed(() => query.value.city ?? 'Todo o Brasil')
           {{ serviceLabel }} · {{ whereLabel }}
         </span>
       </span>
-      <!--
-        No `color="white"` on the icon: that emits `text-white`, which lives in
-        Vuetify's colors.css — the 40KB file Stage 1 deliberately dropped
-        (`styles.colors: false`). The class has no rule behind it, so the icon
-        fell back to currentColor and rendered ink-on-teal. The circle owns the
-        colour instead, and the icon inherits it.
-      -->
       <span class="pill__icon" aria-hidden="true">
         <v-icon :icon="mdiMagnify" size="18" />
       </span>
     </button>
 
-    <SearchDialog v-model="open" />
+    <LazySearchDialog v-model="open" hydrate-on-idle />
   </div>
 </template>
 
@@ -76,8 +60,6 @@ const whereLabel = computed(() => query.value.city ?? 'Todo o Brasil')
   transition: background-color 150ms ease;
 }
 
-/* A warmer step down rather than a grey overlay — a black wash over the cream
-   fill turns it muddy. */
 .pill:hover {
   background: #efeade;
 }
@@ -119,7 +101,6 @@ const whereLabel = computed(() => query.value.city ?? 'Todo o Brasil')
   block-size: 34px;
   border-radius: 50%;
   background: rgb(var(--v-theme-primary));
-  /* The glyph inherits this via currentColor — see the note in the template. */
   color: #fff;
   flex: 0 0 auto;
 }

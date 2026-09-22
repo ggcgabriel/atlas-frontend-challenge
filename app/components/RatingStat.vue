@@ -4,14 +4,11 @@ import { mdiStar } from '@mdi/js'
 const props = defineProps<{
   rating: number
   reviewsCount: number
-  /** Hides the review count when the card is too narrow for it. */
   compact?: boolean
 }>()
 
 const hasReviews = computed(() => props.reviewsCount > 0)
 
-// The glyph alone means nothing to a screen reader, so the whole stat is
-// exposed as one readable sentence and the visual parts are hidden from AT.
 const label = computed(() =>
   hasReviews.value
     ? `Avaliação ${formatRating(props.rating)} de 5, ${formatCount(props.reviewsCount)} avaliações`

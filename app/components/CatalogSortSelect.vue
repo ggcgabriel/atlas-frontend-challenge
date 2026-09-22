@@ -2,13 +2,6 @@
 import type { ProfessionalSort } from '#shared/types/professional'
 import { PROFESSIONAL_SORTS } from '#shared/types/professional'
 
-/**
- * Ordering. Commits straight to the URL — one decision, nothing to batch.
- *
- * The options are derived from `PROFESSIONAL_SORTS`, the same const the zod
- * enum on the server reads, so the select cannot offer an order the API would
- * reject with a 400.
- */
 const { query, commit } = useCatalogQuery()
 
 const SORT_LABELS: Record<ProfessionalSort, string> = {

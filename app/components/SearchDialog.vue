@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { mdiClose, mdiMagnify } from '@mdi/js'
 
-/**
- * The search form behind the header pill: what, and where.
- *
- * Both fields commit to the URL on submit, not on every keystroke — a search is
- * one decision, and committing per character would push a query param per
- * letter through the router and refetch the catalog each time.
- */
 const open = defineModel<boolean>({ required: true })
 
 const { query, commit } = useCatalogQuery()
@@ -17,9 +10,6 @@ const term = ref('')
 const profession = ref<string | null>(null)
 const city = ref<string | null>(null)
 
-// Seeded when the dialog opens rather than watched continuously: while it is
-// closed, the URL is the only truth, and a stale draft should never survive a
-// cancel.
 watch(open, (isOpen) => {
   if (!isOpen) return
   term.value = query.value.q ?? ''
@@ -41,8 +31,6 @@ function submit() {
     q: term.value.trim() || undefined,
     profession: profession.value ?? undefined,
     city: city.value ?? undefined,
-    // A new search starts at the top of the result set, and the profession
-    // filter supersedes whatever category was selected.
     category: profession.value ? undefined : query.value.category,
   })
   open.value = false

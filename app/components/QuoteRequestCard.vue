@@ -7,14 +7,6 @@ import {
 } from '@mdi/js'
 import type { ProfessionalDetail } from '#shared/types/professional'
 
-/**
- * The profile's sticky action card.
- *
- * The form is deliberately local: there is no quotes endpoint in this challenge
- * and inventing one would be scope the brief does not ask for. Submitting
- * confirms inline so the interaction is complete and obviously client-side,
- * rather than posting into a void.
- */
 const props = defineProps<{ professional: ProfessionalDetail }>()
 
 const favorites = useFavoritesStore()
@@ -142,8 +134,6 @@ function submit() {
 </template>
 
 <style scoped>
-/* Follows the reader down the long left column, but only where there is room
-   beside it — stacked on a phone it would cover the content it belongs to. */
 @media (min-width: 1000px) {
   .quote {
     position: sticky;
@@ -155,9 +145,6 @@ function submit() {
   padding: 20px;
 }
 
-/* Vuetify derives `solo-filled` from the surface colour, which is now white —
-   the field would vanish into the card. Pinned to the same fill the other
-   inputs use. */
 .quote__input :deep(.v-field) {
   background: var(--surface-muted);
 }

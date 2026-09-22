@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import type { RatingBreakdown } from '#shared/types/professional'
 
-/**
- * The four criteria the overall score breaks down into.
- *
- * Each number is an `avg()` over this professional's review rows (see
- * `server/api/professionals/[slug].get.ts`), not a decoration derived from the
- * headline rating.
- */
 const props = defineProps<{
   rating: number
   reviewsCount: number
@@ -32,11 +25,6 @@ const rows = computed(() => [
       </p>
     </div>
 
-    <!--
-      A definition list, so the criterion and its score are associated for
-      assistive tech instead of being two neighbouring strings. The bar is
-      aria-hidden: the number beside it already says the same thing.
-    -->
     <dl class="breakdown__rows">
       <template v-for="row in rows" :key="row.label">
         <dt class="breakdown__label">{{ row.label }}</dt>

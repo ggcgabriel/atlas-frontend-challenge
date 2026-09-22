@@ -7,7 +7,6 @@ withDefaults(
     items: ProfessionalListItem[]
     isLoading?: boolean
     isEmpty?: boolean
-    /** How many cards load their avatar eagerly — roughly the first screen. */
     priorityCount?: number
     skeletonCount?: number
   }>(),
@@ -52,15 +51,6 @@ defineEmits<{ clear: [] }>()
 </template>
 
 <style scoped>
-/*
-  Plain CSS Grid rather than v-row/v-col: Vuetify's 12-column grid adds a
-  wrapper div per card and relies on negative margins, which across hundreds of
-  cards is DOM weight for nothing — the ladder here is two fixed steps.
-
-  The card is horizontal now, so it goes full width on phones and two-up from
-  the point where a column is still wide enough for the name, the chips and the
-  price row without wrapping.
-*/
 .pro-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

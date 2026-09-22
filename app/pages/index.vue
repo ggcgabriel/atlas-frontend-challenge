@@ -1,16 +1,6 @@
 <script setup lang="ts">
-/**
- * The catalog listing.
- *
- * Filter state lives in the URL (`useCatalogQuery`), so this page renders
- * filtered on the server: a shared link arrives at the same result set its
- * author saw, with no client-side re-fetch flashing the unfiltered list first.
- */
 const { query, commit, clearAll } = useCatalogQuery()
 
-// Neither call is awaited: Nuxt resolves pending asyncData before it renders on
-// the server anyway, so leaving them unawaited lets the two requests run in
-// parallel instead of filters-then-professionals.
 const { data: filters } = useCatalogFilters()
 
 const {
@@ -25,23 +15,9 @@ const {
   loadMore,
 } = useProfessionalCatalog(query)
 
-/**
- * Infinite scroll, with a budget.
- *
- * Auto-loading stops after `MAX_AUTO_LOADS` consecutive pages and hands back to
- * the button. Two reasons, both real: an unbounded scroll makes the footer
- * unreachable (its links recede every time you approach them), and 520 cards in
- * the DOM is a cost nobody asked for. Pressing the button is an explicit "keep
- * going", so it refills the budget.
- */
 const MAX_AUTO_LOADS = 4
 const autoLoads = ref(0)
 
-/**
- * Pausing on `loadMoreError` is what stops a failed request becoming a hot
- * loop: the sentinel stays on screen after a failure, so without this it would
- * retry against a failing endpoint as fast as the network allows.
- */
 const autoLoadPaused = computed(
   () =>
     isLoadingMore.value ||
@@ -50,9 +26,6 @@ const autoLoadPaused = computed(
 )
 
 async function loadMoreAuto() {
-  // The observer can fire more than once before `disabled` reaches the DOM.
-  // `loadMore()` already ignores re-entrant calls, but without this guard the
-  // budget would still be charged for a page that never loaded.
   if (autoLoadPaused.value || !hasMore.value) return
   autoLoads.value += 1
   await loadMore()
@@ -63,7 +36,6 @@ async function loadMoreManual() {
   await loadMore()
 }
 
-// A new query is a new result set; the previous budget has nothing to do with it.
 watch(query, () => {
   autoLoads.value = 0
 })
@@ -76,13 +48,10 @@ const liveCount = computed(() =>
 
 const category = computed({
   get: () => query.value.category ?? null,
-  // Picking a category clears a profession filter — the narrower one would
-  // otherwise silently win and the chips would contradict each other.
   set: (value: string | null) =>
     commit({ category: value ?? undefined, profession: undefined }),
 })
 
-/** "Pedreiros perto de você" when a profession is selected, else the segment. */
 const heading = computed(() => {
   const selected = filters.value?.professions.find(
     (p) => p.slug === query.value.profession,
@@ -146,12 +115,6 @@ useSeoMeta({
           @clear="clearAll"
         />
 
-        <!--
-          Announces the new count after each page. `role="status"` stays quiet
-          on first render and only speaks on change, which is exactly the
-          "24 more results arrived" signal a scroll-driven list otherwise hides
-          from anyone not watching the screen.
-        -->
         <p class="visually-hidden" role="status" aria-live="polite">
           {{ liveCount }}
         </p>
@@ -176,12 +139,6 @@ useSeoMeta({
             {{ loadMoreError }}
           </v-alert>
 
-          <!--
-            Kept, and not merely as a fallback for browsers without an observer:
-            it is the only way to continue for keyboard and screen-reader users,
-            the retry after a failed page, and the control that resumes
-            auto-loading once the budget below runs out.
-          -->
           <v-btn
             variant="outlined"
             size="large"
@@ -199,7 +156,6 @@ useSeoMeta({
 </template>
 
 <style scoped>
-/* Sits directly under the sticky header — see --app-header-h in tokens.css. */
 .page__categories {
   position: sticky;
   inset-block-start: var(--app-header-h);
@@ -215,7 +171,6 @@ useSeoMeta({
   padding-block: 24px 56px;
 }
 
-/* The sidebar only earns a column where one fits beside two cards. */
 @media (min-width: 1280px) {
   .page__body {
     grid-template-columns: 280px minmax(0, 1fr);
@@ -262,8 +217,6 @@ useSeoMeta({
   color: rgb(var(--v-theme-on-surface) / 62%);
 }
 
-/* The sort control is secondary on a phone; it drops below the heading and
-   aligns left rather than competing with the h1 for the same row. */
 .page__sort {
   flex: 0 0 auto;
 }

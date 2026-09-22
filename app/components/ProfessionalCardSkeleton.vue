@@ -1,10 +1,4 @@
 <template>
-  <!--
-    Mirrors ProfessionalCard's box exactly — same padding, same 60px avatar,
-    same three head lines, same chip row, same divided footer. If the two drift
-    apart the grid jumps when real data replaces the placeholder, which is
-    precisely the CLS this is here to avoid.
-  -->
   <div class="skeleton app-card" aria-hidden="true">
     <div class="skeleton__head">
       <div class="skeleton__avatar shimmer" />

@@ -4,17 +4,11 @@ import type { ProfessionalListItem } from '#shared/types/professional'
 
 const props = defineProps<{
   professional: ProfessionalListItem
-  /**
-   * Above the fold. Loads the avatar eagerly and preloads it instead of
-   * deferring — the first rows are what the visitor waits on.
-   */
   priority?: boolean
 }>()
 
 const pro = computed(() => props.professional)
 
-// Two or three chips at most: the card is a summary, and a wrapped fourth row
-// of chips pushes the price line out of alignment across the grid.
 const chips = computed(() => pro.value.specialties.slice(0, 3))
 </script>
 
@@ -33,11 +27,6 @@ const chips = computed(() => pro.value.specialties.slice(0, 3))
 
       <div class="pro-card__identity">
         <p class="pro-card__title">
-          <!--
-            The stretched link makes the whole card clickable without wrapping
-            the heart in an <a>, which would be invalid and unreachable in the
-            tab order users expect.
-          -->
           <NuxtLink :to="`/profissionais/${pro.slug}`" class="pro-card__link">
             {{ pro.name }}
           </NuxtLink>
@@ -114,9 +103,6 @@ const chips = computed(() => pro.value.specialties.slice(0, 3))
     translate 150ms ease;
 }
 
-/* The lift is `translate`, not `transform`: the stretched link's ::after is
-   already absolutely positioned inside this box, and a transform here would
-   make the card a containing block for it in some engines. */
 .pro-card:hover {
   border-color: rgb(20 22 26 / 20%);
   box-shadow: var(--card-shadow-hover);
@@ -154,7 +140,6 @@ const chips = computed(() => pro.value.specialties.slice(0, 3))
   white-space: nowrap;
 }
 
-/* Stretched hit area: the entire card is the link. */
 .pro-card__link::after {
   content: '';
   position: absolute;
@@ -261,10 +246,6 @@ const chips = computed(() => pro.value.specialties.slice(0, 3))
   color: rgb(var(--v-theme-on-surface) / 60%);
 }
 
-/*
-  The CTA is a <span>, not a second link: the card already is one, and two
-  controls pointing at the same URL means two tab stops for one destination.
-*/
 .pro-card__cta {
   display: inline-flex;
   align-items: center;
@@ -292,7 +273,6 @@ const chips = computed(() => pro.value.specialties.slice(0, 3))
     transition: none;
   }
 
-  /* The colour changes still read; the movement is what gets dropped. */
   .pro-card:hover {
     translate: none;
   }

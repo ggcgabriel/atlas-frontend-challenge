@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 
-/**
- * The category row: "Todos os serviços" plus one chip per category.
- *
- * A category is a single immediate decision, so unlike the filter panel these
- * commit to the URL on click with nothing to apply afterwards.
- */
 const props = defineProps<{
   categories: string[]
-  /** `null` is "Todos os serviços". */
   modelValue?: string | null
 }>()
 
@@ -47,11 +40,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateArrows))
 
 <template>
   <div class="chips">
-    <!--
-      Arrows are real buttons, not hover-only affordances: a horizontal scroll
-      region with no keyboard or pointer control is unusable for anyone without
-      a trackpad. The scroller itself is focusable so arrow keys work too.
-    -->
     <button
       v-show="canScrollLeft"
       type="button"
@@ -135,8 +123,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateArrows))
   padding: 8px 16px;
   border: 1px solid rgb(20 22 26 / 12%);
   border-radius: 999px;
-  /* Muted, not surface: these were white chips on the cream bar, and on a white
-     bar that reversed into white-on-white with only a hairline to find them by. */
   background: var(--surface-muted);
   font-size: 0.8125rem;
   font-weight: 600;

@@ -2,17 +2,6 @@
 import { mdiHeartOutline } from '@mdi/js'
 import type { ProfessionalListResponse } from '#shared/types/professional'
 
-/**
- * The favourites the visitor saved, resolved back into full cards.
- *
- * Deliberately **not** server-rendered: favourites live in localStorage and are
- * hydrated after mount (see `plugins/favorites.client.ts`), so the server has no
- * idea what to fetch. SSR'ing it would emit an empty list into the HTML and then
- * contradict itself on the client. `server: false` makes that explicit rather
- * than accidental.
- *
- * One request for the whole set via the `ids` param, not one request per card.
- */
 const favorites = useFavoritesStore()
 
 const { data, status, refresh } = await useFetch<ProfessionalListResponse>(
@@ -22,21 +11,12 @@ const { data, status, refresh } = await useFetch<ProfessionalListResponse>(
       ids: favorites.ids.join(','),
       limit: 60,
     })),
-    // Nothing to ask for until the store has read the browser.
     immediate: false,
     server: false,
     watch: [() => favorites.ids],
   },
 )
 
-/**
- * Two ways in, both needed.
- *
- * On a cold load the store hydrates on `app:mounted` — after this component's
- * `onMounted` — and the watcher above catches the ids arriving. On a
- * client-side navigation the store is *already* hydrated, so nothing changes
- * and the watcher never fires; this kick covers that case.
- */
 onMounted(() => {
   if (favorites.isHydrated && favorites.count > 0) refresh()
 })
@@ -49,7 +29,6 @@ const isEmpty = computed(() => favorites.isHydrated && favorites.count === 0)
 
 useSeoMeta({
   title: 'Seus favoritos | AtlasHirePro',
-  // Personal, per-browser and empty to a crawler — there is nothing to index.
   robots: 'noindex',
 })
 </script>

@@ -6,14 +6,6 @@ import {
   mdiMagnify,
 } from '@mdi/js'
 
-/**
- * The phone-sized tab bar from the mockup.
- *
- * Buscar and Favoritos are real routes. Pedidos and Conta belong to a product
- * this challenge does not build (orders, auth), so they render as disabled
- * buttons rather than links to nowhere: a tab that navigates to a 404 is worse
- * than one that says it is not available.
- */
 const route = useRoute()
 const favorites = useFavoritesStore()
 
@@ -42,11 +34,6 @@ function isCurrent(to: string | null): boolean {
         >
           <span class="bottom-nav__icon">
             <v-icon :icon="item.icon" size="21" aria-hidden="true" />
-            <!--
-              Gated on isHydrated: favourites are read from localStorage after
-              mount, so rendering the count during SSR would print 0 and then
-              change on the client — a hydration mismatch.
-            -->
             <span
               v-if="
                 item.to === '/favoritos' &&

@@ -27,8 +27,16 @@ watch(
 
 <template>
   <aside class="sidebar" aria-label="Filtros do catálogo">
+    <!--
+      Idle, not visible: this panel is rendered twice and each copy is
+      `display: none` at the other breakpoint, and an IntersectionObserver never
+      fires for a display:none element — `hydrate-on-visible` would leave
+      whichever copy is active permanently un-hydrated on one of the two
+      layouts. Idle is also the honest description: at >=1280px the card is on
+      screen immediately, it just is not urgent.
+    -->
     <div class="sidebar__card app-card">
-      <CatalogFilterPanel />
+      <LazyCatalogFilterPanel hydrate-on-idle />
     </div>
 
     <v-navigation-drawer
@@ -49,7 +57,10 @@ watch(
         />
       </div>
 
-      <CatalogFilterPanel @applied="ui.toggleFiltersDrawer(false)" />
+      <LazyCatalogFilterPanel
+        hydrate-on-idle
+        @applied="ui.toggleFiltersDrawer(false)"
+      />
     </v-navigation-drawer>
   </aside>
 </template>

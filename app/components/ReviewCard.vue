@@ -4,8 +4,6 @@ import type { ProfessionalReview } from '#shared/types/professional'
 
 const props = defineProps<{ review: ProfessionalReview }>()
 
-// Reviewers are seeded with a first name only, so the avatar has one initial
-// and the id keeps the tint stable between renders.
 const tint = computed(() => tintFor(props.review.id))
 const initials = computed(() => initialsOf(props.review.authorName))
 </script>

@@ -1,16 +1,5 @@
 <script setup lang="ts">
-/**
- * The AtlasHirePro wordmark: the podium mark plus "Atlas" in ink and "HirePro"
- * in rust.
- *
- * The mark is inline SVG rather than a file under `public/`: it is a single
- * path, it inherits `currentColor` so the dark footer can invert it, and the
- * sticky header never waits on a request to paint its own logo.
- *
- * The path was traced from the source PNG (potrace), then rounded to one
- * decimal — 0.1 units of a 506x606 viewBox is well under a physical pixel at
- * the size this renders.
- */
+
 withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 </script>
 
@@ -42,11 +31,6 @@ withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
   white-space: nowrap;
 }
 
-/*
-  Sized by height, not boxed into a square: the artwork is taller than it is
-  wide (506x606), so a square container would either crop the podium or shrink
-  the figure to nothing.
-*/
 .brand__mark {
   display: block;
   block-size: 34px;

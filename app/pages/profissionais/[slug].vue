@@ -8,14 +8,6 @@ import {
 } from '@mdi/js'
 import type { ProfessionalDetail } from '#shared/types/professional'
 
-/**
- * The professional's profile.
- *
- * A dedicated route rather than a modal: it is linkable, indexable and
- * server-rendered, which a dialog over the listing can be none of. The catalog
- * stays one history entry behind, so "Voltar ao catálogo" returns to the same
- * filtered result set the visitor arrived from.
- */
 const route = useRoute()
 
 const { data: pro, error } = await useFetch<ProfessionalDetail>(
@@ -30,7 +22,6 @@ if (error.value) {
   })
 }
 
-/** Specialties plus the perks worth a chip, in the order the mock reads them. */
 const chips = computed(() => {
   if (!pro.value) return []
   const perks: string[] = []
@@ -49,14 +40,6 @@ const visibleReviews = computed(() =>
     : (pro.value?.reviews ?? []).slice(0, REVIEW_PREVIEW),
 )
 
-/**
- * "Trabalhos recentes" — the services this professional actually offers, in the
- * city they work in.
- *
- * `portfolio_images` is modelled but deliberately unseeded (no licensed photo
- * source that matches the trade), so these are captioned tint tiles rather than
- * stock images that show a dragonfly for a gardener. Same shape, no fiction.
- */
 const TILE_TINTS = [
   'var(--tint-sage)',
   'var(--tint-peach)',
@@ -83,8 +66,6 @@ useSeoMeta({
       : '',
 })
 
-// Structured data: this is a local service listing, and the rating and price
-// are exactly what a rich result wants to show.
 useHead(() => ({
   script: pro.value
     ? [
@@ -272,11 +253,18 @@ useHead(() => ({
             </div>
 
             <template v-if="pro.reviewsCount > 0">
-              <RatingBreakdown
+              <!--
+                Well below the fold, and purely presentational until seen, so
+                it hydrates when scrolled to. `ReviewCard` below is deliberately
+                NOT lazy: it is inside a v-for, and one async component plus one
+                observer per row costs more than the row is worth.
+              -->
+              <LazyRatingBreakdown
                 :rating="pro.rating"
                 :reviews-count="pro.reviewsCount"
                 :breakdown="pro.ratingBreakdown"
                 class="mb-5"
+                hydrate-on-visible
               />
 
               <ul class="profile__reviews">
@@ -314,7 +302,12 @@ useHead(() => ({
         </div>
 
         <div class="profile__aside">
-          <QuoteRequestCard :professional="pro" />
+          <!--
+            Carries a v-form and a v-textarea. On a wide screen it is already in
+            view and hydrates at once; on a phone it sits below the fold and
+            waits. `hydrate-on-visible` covers both without a breakpoint check.
+          -->
+          <LazyQuoteRequestCard :professional="pro" hydrate-on-visible />
         </div>
       </div>
     </div>

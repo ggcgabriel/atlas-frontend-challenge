@@ -1,20 +1,11 @@
 <script setup lang="ts">
-/**
- * The filter form: price, service radius, seals, experience.
- *
- * Everything here edits the draft in `stores/catalog.ts` and only reaches the
- * URL on "Aplicar filtros". Live-committing would fire a request per slider
- * pixel, and inside the mobile drawer it would refetch behind a sheet the user
- * cannot see.
- */
+
 const emit = defineEmits<{ applied: [] }>()
 
 const catalog = useCatalogStore()
 const { draft: committed, commit, clearAll, hasFilters } = useCatalogQuery()
 const { data: filters } = useCatalogFilters()
 
-// Seed the buffer from what is applied, and re-seed whenever that changes
-// underneath us (a chip removed elsewhere, or the back button).
 watch(committed, (value) => catalog.sync(value), {
   immediate: true,
   deep: true,
@@ -27,14 +18,6 @@ const priceCeil = computed(() =>
   Math.ceil((filters.value?.priceRange.maxCents ?? 50000) / 100),
 )
 
-/**
- * The slider works in whole BRL; the query and the API speak cents.
- *
- * A handle parked at either end means "no bound on this side", so it is written
- * back as `undefined` rather than as the current min or max — pinning the
- * boundary into the URL would filter out any professional a later reseed prices
- * outside today's range.
- */
 const priceRange = computed<number[]>({
   get: () => [
     draftPrice(catalog.draft.minPrice, priceFloor.value),
@@ -53,7 +36,6 @@ function draftPrice(cents: number | undefined, fallback: number): number {
   return cents === undefined ? fallback : Math.round(cents / 100)
 }
 
-/** Read-back labels under the slider, in cents for the shared formatter. */
 const priceFromCents = computed(() => (priceRange.value[0] ?? 0) * 100)
 const priceToCents = computed(() => (priceRange.value[1] ?? 0) * 100)
 
@@ -71,7 +53,6 @@ const EXPERIENCE_OPTIONS = [
   { label: 'Qualquer experiência', value: null },
 ]
 
-// v-radio-group needs a concrete value; `null` is the "no filter" option.
 const radius = computed({
   get: () => catalog.draft.minRadiusKm ?? null,
   set: (value: number | null) => catalog.set('minRadiusKm', value ?? undefined),
@@ -120,12 +101,6 @@ function clear() {
       </button>
     </div>
 
-    <!--
-      Real fieldsets: each group needs one accessible name, and without them a
-      screen reader reads "Até 10 km" with no idea what it qualifies. The legend
-      is visually hidden because the styled heading above it is already the
-      label sighted users read.
-    -->
     <fieldset class="filters__group">
       <legend class="visually-hidden">Valor por hora</legend>
       <p class="filters__label" aria-hidden="true">Valor por hora</p>

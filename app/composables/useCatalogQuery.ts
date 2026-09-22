@@ -4,20 +4,6 @@ import type {
 } from '#shared/types/professional'
 import { PROFESSIONAL_SORTS } from '#shared/types/professional'
 
-/**
- * The catalog's filter state, with **the URL as the single source of truth**.
- *
- * Everything the user picks lands in `route.query`, which means a filtered
- * listing is a link: it can be shared, bookmarked, reloaded, and — because the
- * page fetches from the same parsed object on the server — it renders filtered
- * in the SSR HTML rather than flashing the unfiltered set first.
- *
- * `router.replace`, not `push`: adjusting a filter is refining one search, not
- * a new destination. Pushing would make the back button walk backwards through
- * every checkbox the user ticked. Navigating to a profile still pushes.
- */
-
-/** The subset of the query the filter panel owns, as a flat draftable object. */
 export interface CatalogDraft {
   minPrice?: number
   maxPrice?: number
@@ -28,7 +14,6 @@ export interface CatalogDraft {
   freeQuoteOnly?: boolean
 }
 
-/** Query keys that are filters, in the order the chips should list them. */
 export const FILTER_KEYS = [
   'q',
   'profession',
@@ -78,12 +63,6 @@ export function useCatalogQuery() {
   const route = useRoute()
   const router = useRouter()
 
-  /**
-   * The committed query, parsed and validated off the URL.
-   *
-   * Anything unparseable is dropped rather than passed through: a hand-edited
-   * `?minPrice=banana` should render the catalog, not a 400 from the API.
-   */
   const query = computed<ProfessionalQuery>(() => {
     const q = route.query
     return {

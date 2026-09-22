@@ -2,17 +2,9 @@
 import { mdiClose } from '@mdi/js'
 import type { CatalogFilterKey } from '~/composables/useCatalogQuery'
 
-/**
- * What is currently narrowing the results, each chip removable.
- *
- * Filters that live off-screen — inside a drawer, or below the fold in the
- * sidebar — are invisible constraints otherwise: the count drops and nothing on
- * screen says why.
- */
 const { query, activeKeys, remove } = useCatalogQuery()
 const { data: filters } = useCatalogFilters()
 
-/** Human label per filter, in the user's terms rather than the query's. */
 function labelFor(key: CatalogFilterKey): string {
   const value = query.value[key]
 

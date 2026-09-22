@@ -6,21 +6,6 @@ import type {
 
 export const CATALOG_PAGE_SIZE = 24
 
-/**
- * Loads the catalog listing, one page at a time.
- *
- * Two fetch strategies on purpose:
- *
- * - **Page 1 uses `useFetch`**, so it is rendered on the server. That first
- *   screen is the LCP and the only thing a crawler sees, so it must not depend
- *   on client JS.
- * - **Pages 2+ use `$fetch`** on demand and append to `extraItems`. They are a
- *   user interaction, never part of the server render.
- *
- * Stage 4 moves the query into `stores/catalog.ts` and this composable reacts to
- * it (`reset()` already exists for that). Stage 5 swaps the `loadMore()` trigger
- * for an IntersectionObserver without touching anything below.
- */
 export function useProfessionalCatalog(
   query: MaybeRefOrGetter<ProfessionalQuery> = {},
 ) {
@@ -29,8 +14,6 @@ export function useProfessionalCatalog(
     ...toValue(query),
   }))
 
-  // Declared before the fetch below: `onResponse` closes over these, and if it
-  // ever fires synchronously they would still be in the temporal dead zone.
   const extraItems = ref<ProfessionalListItem[]>([])
   const page = ref(1)
   const isLoadingMore = ref(false)
@@ -49,7 +32,6 @@ export function useProfessionalCatalog(
     refresh,
   } = useFetch<ProfessionalListResponse>('/api/professionals', {
     query: baseQuery,
-    // A different query is a different result set, not an extra page.
     watch: [baseQuery],
     onResponse: () => reset(),
   })

@@ -4,11 +4,6 @@ import { mdiHeartOutline, mdiTune } from '@mdi/js'
 const ui = useUiStore()
 const favorites = useFavoritesStore()
 
-/**
- * Affordances the mockup shows but this challenge does not build (auth,
- * professional onboarding, help centre). They render disabled rather than as
- * links to nowhere — an inert control that says so is honest; a 404 is not.
- */
 const OUT_OF_SCOPE = 'Fora do escopo deste desafio'
 
 const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
@@ -25,10 +20,6 @@ const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
         </div>
 
         <div class="site-header__actions">
-          <!--
-            The count only renders once favourites have hydrated from storage,
-            otherwise the server would render 0 and the client a number.
-          -->
           <v-btn
             to="/favoritos"
             variant="text"
@@ -63,8 +54,6 @@ const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
             Entrar
           </v-btn>
 
-          <!-- The only way into the filters below 1280px, where the sidebar
-               card is not rendered. -->
           <v-btn
             variant="outlined"
             size="small"
@@ -122,10 +111,6 @@ const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
   border-block-end: 1px solid rgb(20 22 26 / 8%);
 }
 
-/* Equal `1fr` side tracks put the middle one at the centre of the header,
-   rather than wherever the wordmark happens to end. The middle track carries
-   the pill's width cap, and `minmax(0, …)` lets it shrink — the grid gives up
-   width there before it overflows on a narrow screen. */
 .site-header__inner {
   display: grid;
   grid-template-columns: 1fr minmax(0, 420px) 1fr;
@@ -134,8 +119,6 @@ const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
   block-size: var(--app-header-h);
 }
 
-/* `min-inline-size: 0` is what lets the pill's label ellipsize instead of
-   pushing the track wider. */
 .site-header__search {
   min-inline-size: 0;
 }
@@ -151,8 +134,6 @@ const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
   justify-self: end;
 }
 
-/* Below `md` the header is the logo, the pill and the filters button — the
-   account links do not fit and the bottom nav covers that ground anyway. */
 .site-header__link {
   display: none;
 }
@@ -171,8 +152,6 @@ const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
   }
 }
 
-/* Above 1280px the filter panel is permanently on screen, so the button that
-   opens the drawer has nothing left to do. */
 @media (min-width: 1280px) {
   .site-header__filters {
     display: none;
@@ -182,7 +161,6 @@ const FOOTER_LINKS = ['Como funciona', 'Seja um profissional', 'Ajuda']
 .site-footer {
   background: rgb(var(--v-theme-secondary));
   color: rgb(255 255 255 / 82%);
-  /* Clears the fixed bottom nav on phones. */
   padding-block-end: var(--app-bottomnav-h);
 }
 

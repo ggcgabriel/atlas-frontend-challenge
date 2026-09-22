@@ -17,11 +17,6 @@ const label = computed(() =>
 </script>
 
 <template>
-  <!--
-    A real <button>, and it sits ABOVE the card's stretched link rather than
-    inside it: an interactive element nested in an <a> is both invalid and
-    unreachable by keyboard in the order users expect.
-  -->
   <button
     type="button"
     class="favorite-button"
@@ -41,7 +36,6 @@ const label = computed(() =>
 <style scoped>
 .favorite-button {
   position: relative;
-  /* Above the card link's stretched ::after. */
   z-index: 2;
   display: grid;
   place-items: center;
@@ -70,7 +64,6 @@ const label = computed(() =>
   outline-offset: 2px;
 }
 
-/* The card is white now, so the heart is ink rather than a shadowed white. */
 .favorite-button__outline {
   color: rgb(var(--v-theme-on-surface) / 70%);
 }
