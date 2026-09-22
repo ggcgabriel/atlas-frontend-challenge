@@ -97,6 +97,7 @@ const chips = computed(() => pro.value.specialties.slice(0, 3))
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+  block-size: 100%;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
@@ -228,6 +229,9 @@ const chips = computed(() => pro.value.specialties.slice(0, 3))
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  /* Pinned to the bottom so the price and CTA line up across a row, whatever
+     the head wraps to or how many chips there are. */
+  margin-block-start: auto;
   padding-block-start: 12px;
   border-block-start: 1px solid rgb(20 22 26 / 8%);
 }
