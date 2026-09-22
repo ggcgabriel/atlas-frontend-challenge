@@ -36,9 +36,10 @@ export default defineNuxtConfig({
         // Vuetify's colors.css is ~40KB of `.bg-red-lighten-2`-style helpers we
         // never use — the theme tokens below cover our palette instead.
         colors: false,
-        // utilities.css is ~240KB raw but carries the d-flex/ma-4/text-* classes
-        // the components lean on. Revisit in the performance stage.
-        utilities: true,
+        // Measured: we use 18 of the 3011 utility classes this shipped. Dropping
+        // it cut entry.css from 168KB to 20KB raw (26KB -> 3.4KB gzip) on a
+        // render-blocking file. The 18 are re-declared in assets/styles/tokens.css.
+        utilities: false,
       },
       ssrClientHints: {
         reloadOnFirstRequest: false,
@@ -88,11 +89,43 @@ export default defineNuxtConfig({
   },
 
   // Design tokens Vuetify's theme does not cover (tints, radii, chrome heights)
+  nitro: {
+    // Ship .gz and .br next to every public asset. Nitro's node-server serves
+    // them directly instead of compressing on each request; a CDN in front
+    // (Vercel) will use them too rather than re-doing the work.
+    compressPublicAssets: { gzip: true, brotli: true },
+  },
+
+  routeRules: {
+    // A professional's profile changes rarely and is identical for everyone —
+    // the favourite heart is hydrated from localStorage after load, so nothing
+    // here is per-visitor. The listing is deliberately NOT cached: it varies by
+    // query string and would fragment the cache into thousands of keys.
+    '/profissionais/**': { swr: 300 },
+  },
+
   // plus the type family, which @nuxt/fonts resolves and self-hosts from here.
   css: ['~/assets/styles/tokens.css'],
 
   fonts: {
-    families: [{ name: 'Plus Jakarta Sans', provider: 'google' }],
+    families: [
+      {
+        name: 'Plus Jakarta Sans',
+        provider: 'google',
+        // `weights` defaults to [400]. Our CSS uses 600/700/800 for every
+        // heading, price and seal, so without these the browser was
+        // synthesising bold from the regular face — smeared letterforms, and
+        // nothing actually rendered in Plus Jakarta Sans Bold.
+        weights: [400, 600, 700, 800],
+        styles: ['normal'],
+        // The default pulled cyrillic, greek and vietnamese too. The UI is
+        // pt-BR; latin + latin-ext covers it.
+        subsets: ['latin', 'latin-ext'],
+        // Subsetted families are not preloaded by default, so the font was only
+        // discovered after the CSS parsed. It is the page's only family.
+        preload: true,
+      },
+    ],
   },
 
   image: {
