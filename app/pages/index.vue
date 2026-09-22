@@ -12,33 +12,10 @@ const {
   isEmpty,
   error,
   loadMoreError,
-  loadMore,
+  autoLoadPaused,
+  loadMoreAuto,
+  loadMoreManual,
 } = useProfessionalCatalog(query)
-
-const MAX_AUTO_LOADS = 4
-const autoLoads = ref(0)
-
-const autoLoadPaused = computed(
-  () =>
-    isLoadingMore.value ||
-    Boolean(loadMoreError.value) ||
-    autoLoads.value >= MAX_AUTO_LOADS,
-)
-
-async function loadMoreAuto() {
-  if (autoLoadPaused.value || !hasMore.value) return
-  autoLoads.value += 1
-  await loadMore()
-}
-
-async function loadMoreManual() {
-  autoLoads.value = 0
-  await loadMore()
-}
-
-watch(query, () => {
-  autoLoads.value = 0
-})
 
 const liveCount = computed(() =>
   isLoading.value
@@ -102,7 +79,7 @@ useSeoMeta({
           <CatalogSortSelect class="page__sort" />
         </div>
 
-        <ActiveFilterChips class="mb-5" />
+        <ActiveFilterChips />
 
         <v-alert v-if="error" type="error" variant="tonal" class="mb-6">
           Não foi possível carregar o catálogo. {{ error.message }}

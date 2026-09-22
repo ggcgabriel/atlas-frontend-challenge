@@ -2,17 +2,6 @@ import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'atlas:favorites'
 
-/**
- * Favourited professionals, persisted per browser.
- *
- * The store deliberately starts **empty on both server and client**. Reading
- * localStorage during setup would make the server render an empty heart and the
- * client render a filled one, which is a hydration mismatch; instead
- * `plugins/favorites.client.ts` calls `hydrate()` once the app has mounted.
- *
- * Every storage access is guarded: localStorage throws in private mode and can
- * be disabled outright.
- */
 export const useFavoritesStore = defineStore('favorites', () => {
   const ids = ref<number[]>([])
   /** False until the browser has been read, so the UI can avoid flicker. */

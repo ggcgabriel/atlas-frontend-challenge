@@ -101,7 +101,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateArrows))
   padding-block: 12px;
   scroll-behavior: smooth;
   scrollbar-width: none;
-  /* Snap so a flick never leaves a chip half-cut. */
   scroll-snap-type: x proximity;
 }
 

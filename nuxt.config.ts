@@ -1,6 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-09-21',
+
+  // Specs sit next to the code they cover. Without this Nuxt auto-imports
+  // everything under app/utils and app/composables, so `format.spec.ts` would
+  // be pulled into the build and its exports registered as app utilities.
+  ignore: ['**/*.spec.ts'],
   devtools: { enabled: true },
 
   ssr: true,

@@ -55,7 +55,17 @@ function labelFor(key: CatalogFilterKey): string {
   gap: 8px;
   list-style: none;
   padding: 0;
-  margin: 0;
+  /*
+    The gap below the chips lives here, not as an `mb-5` on the tag in the page.
+    A scoped selector compiles to `.active-filters[data-v-…]`, which outranks a
+    plain `.mb-5`, so the utility was silently losing and the chips sat flush
+    against the grid.
+
+    Owning it here is also more correct: the whole <ul> is behind a `v-if`, so
+    the spacing disappears together with the chips instead of leaving a gap
+    when no filter is active.
+  */
+  margin: 0 0 20px;
 }
 
 .active-filters__chip {
