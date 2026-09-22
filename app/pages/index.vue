@@ -1,100 +1,207 @@
 <script setup lang="ts">
-import { mdiCheckDecagram, mdiFlash, mdiStar } from '@mdi/js'
+/**
+ * The catalog listing.
+ *
+ * Filter state lives in the URL (`useCatalogQuery`), so this page renders
+ * filtered on the server: a shared link arrives at the same result set its
+ * author saw, with no client-side re-fetch flashing the unfiltered list first.
+ */
+const { query, commit, clearAll } = useCatalogQuery()
 
-// Stage 2 smoke test: proves SSR + Nitro + Postgres + the image pipeline all
-// line up. The real catalog (grid, filters, infinite scroll) lands in Stage 3.
-const { data, error } = await useFetch('/api/professionals', {
-  query: { limit: 6, sort: 'rating_desc' },
+// Neither call is awaited: Nuxt resolves pending asyncData before it renders on
+// the server anyway, so leaving them unawaited lets the two requests run in
+// parallel instead of filters-then-professionals.
+const { data: filters } = useCatalogFilters()
+
+const {
+  items,
+  total,
+  hasMore,
+  isLoading,
+  isLoadingMore,
+  isEmpty,
+  error,
+  loadMoreError,
+  loadMore,
+} = useProfessionalCatalog(query)
+
+const category = computed({
+  get: () => query.value.category ?? null,
+  // Picking a category clears a profession filter — the narrower one would
+  // otherwise silently win and the chips would contradict each other.
+  set: (value: string | null) =>
+    commit({ category: value ?? undefined, profession: undefined }),
 })
 
-const brl = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
+/** "Pedreiros perto de você" when a profession is selected, else the segment. */
+const heading = computed(() => {
+  const selected = filters.value?.professions.find(
+    (p) => p.slug === query.value.profession,
+  )
+  if (selected) return `${selected.namePlural} perto de você`
+  if (query.value.category) return `${query.value.category} perto de você`
+  return 'Profissionais de reforma e manutenção'
 })
-const formatRate = (cents: number) => `${brl.format(cents / 100)}/h`
+
+const subtitle = computed(() => {
+  if (isLoading.value) return 'Carregando profissionais…'
+  const noun =
+    total.value === 1 ? 'profissional disponível' : 'profissionais disponíveis'
+  const where = query.value.city
+    ? `em ${query.value.city} e cidades vizinhas`
+    : 'em todo o Brasil'
+  return `${formatCount(total.value)} ${noun} ${where}`
+})
 
 useSeoMeta({
-  title: 'Atlas Pro — profissionais de reforma e manutenção',
+  title: 'AtlasHirePro — profissionais de reforma e manutenção',
   description:
-    'Encontre eletricistas, encanadores, pintores e marceneiros por preço, avaliação e região.',
+    'Encontre eletricistas, encanadores, pintores, marceneiros e mais. Compare preço, avaliação, experiência e região.',
 })
 </script>
 
 <template>
-  <v-container class="py-8">
-    <h1 class="text-h4 font-weight-bold mb-2">Profissionais de reforma</h1>
-    <p class="text-body-1 text-medium-emphasis mb-6">
-      Etapa 2 concluída: {{ data?.total ?? 0 }} profissionais servidos pelo
-      Postgres via Nitro.
-    </p>
+  <div class="page">
+    <div class="page__categories">
+      <div class="app-shell">
+        <CategoryChips
+          v-model="category"
+          :categories="filters?.categories ?? []"
+        />
+      </div>
+    </div>
 
-    <v-alert v-if="error" type="error" variant="tonal" class="mb-6">
-      Falha ao carregar: {{ error.message }}
-    </v-alert>
+    <div class="app-shell page__body">
+      <CatalogSidebar />
 
-    <v-row>
-      <v-col
-        v-for="pro in data?.items ?? []"
-        :key="pro.id"
-        cols="12"
-        sm="6"
-        md="4"
-      >
-        <v-card border flat class="h-100">
-          <div class="d-flex pa-4 ga-4">
-            <!-- width/height are fixed and known, so the box never reflows -->
-            <NuxtImg
-              :src="pro.avatarUrl"
-              :alt="`Foto de ${pro.name}`"
-              width="72"
-              height="72"
-              sizes="72px"
-              loading="lazy"
-              class="rounded-lg flex-shrink-0"
-              :style="{
-                backgroundImage: `url(${pro.avatarLqip})`,
-                backgroundSize: 'cover',
-              }"
-            />
-            <div class="min-w-0">
-              <div class="d-flex align-center ga-1">
-                <span class="text-subtitle-1 font-weight-bold text-truncate">
-                  {{ pro.name }}
-                </span>
-                <v-icon
-                  v-if="pro.isVerified"
-                  :icon="mdiCheckDecagram"
-                  size="16"
-                  color="primary"
-                  :aria-label="`${pro.name} é verificado`"
-                />
-              </div>
-              <div class="text-body-2 text-medium-emphasis">
-                {{ pro.profession }} · {{ pro.city }}/{{ pro.state }}
-              </div>
-              <div class="d-flex align-center ga-1 mt-1">
-                <v-icon :icon="mdiStar" size="14" color="warning" />
-                <span class="text-body-2">
-                  {{ pro.rating.toFixed(1) }}
-                  <span class="text-medium-emphasis">
-                    ({{ pro.reviewsCount }})
-                  </span>
-                </span>
-                <v-icon
-                  v-if="pro.acceptsUrgent"
-                  :icon="mdiFlash"
-                  size="14"
-                  color="warning"
-                  aria-label="Atende urgência"
-                />
-              </div>
-              <div class="text-subtitle-2 font-weight-bold mt-2">
-                {{ formatRate(pro.hourlyRateCents) }}
-              </div>
-            </div>
+      <div class="page__results">
+        <div class="page__heading">
+          <div class="page__heading-text">
+            <h1 class="page__title">{{ heading }}</h1>
+            <p class="page__subtitle">{{ subtitle }}</p>
           </div>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+
+          <CatalogSortSelect class="page__sort" />
+        </div>
+
+        <ActiveFilterChips class="mb-5" />
+
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-6">
+          Não foi possível carregar o catálogo. {{ error.message }}
+        </v-alert>
+
+        <ProfessionalGrid
+          :items="items"
+          :is-loading="isLoading"
+          :is-empty="isEmpty"
+          @clear="clearAll"
+        />
+
+        <div v-if="hasMore" class="page__more">
+          <p class="text-body-2 text-medium-emphasis mb-3">
+            {{ formatCount(items.length) }} de {{ formatCount(total) }}
+          </p>
+
+          <v-alert
+            v-if="loadMoreError"
+            type="error"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+          >
+            {{ loadMoreError }}
+          </v-alert>
+
+          <v-btn
+            variant="outlined"
+            size="large"
+            rounded="pill"
+            class="text-none px-8"
+            :loading="isLoadingMore"
+            @click="loadMore"
+          >
+            Carregar mais profissionais
+          </v-btn>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+/* Sits directly under the sticky header — see --app-header-h in tokens.css. */
+.page__categories {
+  position: sticky;
+  inset-block-start: var(--app-header-h);
+  z-index: 1004;
+  background: rgb(var(--v-theme-background));
+  border-block-end: 1px solid rgb(20 22 26 / 8%);
+}
+
+.page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  padding-block: 24px 56px;
+}
+
+/* The sidebar only earns a column where one fits beside two cards. */
+@media (min-width: 1280px) {
+  .page__body {
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 32px;
+  }
+}
+
+.page__results {
+  min-inline-size: 0;
+}
+
+.page__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-block-end: 16px;
+}
+
+@media (min-width: 720px) {
+  .page__heading {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.page__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 2rem;
+}
+
+@media (min-width: 960px) {
+  .page__title {
+    font-size: 1.875rem;
+    line-height: 2.375rem;
+  }
+}
+
+.page__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: rgb(var(--v-theme-on-surface) / 62%);
+}
+
+/* The sort control is secondary on a phone; it drops below the heading and
+   aligns left rather than competing with the h1 for the same row. */
+.page__sort {
+  flex: 0 0 auto;
+}
+
+.page__more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-block-start: 40px;
+}
+</style>

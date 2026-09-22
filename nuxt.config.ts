@@ -50,22 +50,30 @@ export default defineNuxtConfig({
       icons: {
         defaultSet: 'mdi-svg',
       },
+      // Sampled from the AtlasHirePro mockups in docs/context/layout/ rather
+      // than eyeballed: a warm cream canvas, dark-teal primary, rust accent.
       theme: {
         defaultTheme: 'atlasLight',
         themes: {
           atlasLight: {
             dark: false,
             colors: {
-              'background': '#f7f8fa',
-              'surface': '#ffffff',
-              'primary': '#2f5bea',
-              'secondary': '#0f172a',
-              'success': '#12a150',
-              'warning': '#f5a524',
-              'error': '#e5484d',
-              'info': '#0ea5e9',
-              'on-background': '#0f172a',
-              'on-surface': '#0f172a',
+              // White canvas: the cards carry the separation themselves, via
+              // the hairline + shadow in tokens.css. The cream the mockups used
+              // here survives as `--surface-muted` on small inner surfaces.
+              background: '#ffffff',
+              surface: '#ffffff',
+              primary: '#0f3d3e',
+              secondary: '#14161a',
+              // The "HirePro" in the wordmark and the rating star.
+              accent: '#c05621',
+              success: '#1f7a5a',
+              warning: '#b45309',
+              error: '#b3261e',
+              info: '#0f3d3e',
+              'on-background': '#14161a',
+              'on-surface': '#14161a',
+              'on-accent': '#ffffff',
             },
           },
         },
@@ -77,6 +85,14 @@ export default defineNuxtConfig({
         VSelect: { variant: 'outlined', density: 'comfortable' },
       },
     },
+  },
+
+  // Design tokens Vuetify's theme does not cover (tints, radii, chrome heights)
+  // plus the type family, which @nuxt/fonts resolves and self-hosts from here.
+  css: ['~/assets/styles/tokens.css'],
+
+  fonts: {
+    families: [{ name: 'Plus Jakarta Sans', provider: 'google' }],
   },
 
   image: {
@@ -91,7 +107,14 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'pt-BR' },
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'theme-color', content: '#2f5bea' },
+        { name: 'theme-color', content: '#0f3d3e' },
+      ],
+      link: [
+        // `sizes="any"` on the .ico plus a typed SVG is the pattern that makes
+        // a browser prefer the vector where it can and fall back where it
+        // cannot, without either one winning by declaration order.
+        { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
       ],
     },
   },
