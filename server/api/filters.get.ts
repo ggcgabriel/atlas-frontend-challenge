@@ -24,6 +24,7 @@ export default defineEventHandler(async (event): Promise<CatalogFilters> => {
         id: professions.id,
         slug: professions.slug,
         name: professions.name,
+        namePlural: professions.namePlural,
         category: professions.category,
       })
       .from(professions)

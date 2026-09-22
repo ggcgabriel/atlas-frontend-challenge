@@ -1,4 +1,15 @@
-import { and, asc, desc, eq, gte, ilike, lte, or, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { professionals, professions } from '~~/server/database/schema'
 import type {
@@ -28,6 +39,14 @@ export default defineEventHandler(
       query.city ? eq(professionals.city, query.city) : undefined,
       query.urgentOnly ? eq(professionals.acceptsUrgent, true) : undefined,
       query.verifiedOnly ? eq(professionals.isVerified, true) : undefined,
+      query.freeQuoteOnly ? eq(professionals.freeQuote, true) : undefined,
+      query.minRadiusKm !== undefined
+        ? gte(professionals.serviceRadiusKm, query.minRadiusKm)
+        : undefined,
+      query.minExperience !== undefined
+        ? gte(professionals.experienceYears, query.minExperience)
+        : undefined,
+      query.ids?.length ? inArray(professionals.id, query.ids) : undefined,
       query.minPrice !== undefined
         ? gte(professionals.hourlyRateCents, query.minPrice)
         : undefined,
@@ -80,8 +99,12 @@ export default defineEventHandler(
           city: professionals.city,
           state: professionals.state,
           experienceYears: professionals.experienceYears,
+          specialties: professionals.specialties,
+          serviceRadiusKm: professionals.serviceRadiusKm,
           acceptsUrgent: professionals.acceptsUrgent,
           isVerified: professionals.isVerified,
+          freeQuote: professionals.freeQuote,
+          warrantyMonths: professionals.warrantyMonths,
           isAvailable: professionals.isAvailable,
         })
         .from(professionals)

@@ -22,6 +22,8 @@ export interface Profession {
   id: number
   slug: string
   name: string
+  /** pt-BR plural, for the listing headline ("Pedreiros perto de você"). */
+  namePlural: string
   category: string
 }
 
@@ -33,6 +35,7 @@ export interface ProfessionalListItem {
   id: number
   slug: string
   name: string
+  /** Empty when the professional has no photo — the UI renders initials. */
   avatarUrl: string
   /** Inline 16px WebP data URI, shown until the real avatar decodes. */
   avatarLqip: string
@@ -45,8 +48,14 @@ export interface ProfessionalListItem {
   city: string
   state: string
   experienceYears: number
+  /** 2-3 of the profession's specialties, as chips on the card. */
+  specialties: string[]
+  serviceRadiusKm: number
   acceptsUrgent: boolean
   isVerified: boolean
+  freeQuote: boolean
+  /** Months of warranty on finished work; 0 means none advertised. */
+  warrantyMonths: number
   isAvailable: boolean
 }
 
@@ -74,12 +83,23 @@ export interface ProfessionalReview {
   createdAt: string
 }
 
+/** The four criteria the profile breaks the overall score down by. */
+export interface RatingBreakdown {
+  punctuality: number
+  finish: number
+  cleanliness: number
+  value: number
+}
+
 export interface ProfessionalDetail extends ProfessionalListItem {
   bio: string
   lat: number
   lng: number
-  serviceRadiusKm: number
   createdAt: string
+  /** Typical first reply, in hours. */
+  responseTimeHours: number
+  /** avg() over this professional's reviews. All zeros when there are none. */
+  ratingBreakdown: RatingBreakdown
   services: ProfessionalService[]
   reviews: ProfessionalReview[]
   /** Empty until Stage 6 — the table exists, the photo source does not yet. */
@@ -94,8 +114,14 @@ export interface ProfessionalQuery {
   minPrice?: number
   maxPrice?: number
   minRating?: number
+  /** Travels at least this far — the sidebar's "raio de atendimento". */
+  minRadiusKm?: number
+  minExperience?: number
   urgentOnly?: boolean
   verifiedOnly?: boolean
+  freeQuoteOnly?: boolean
+  /** Comma-separated ids, for the favourites page. */
+  ids?: string
   sort?: ProfessionalSort
   page?: number
   limit?: number
